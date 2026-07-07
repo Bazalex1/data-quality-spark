@@ -1,73 +1,164 @@
-// frontend/app/runs/page.tsx
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { getRuns } from '@/lib/api';
-import Link from 'next/link';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import StatusBadge from '@/components/StatusBadge';
+import { Button } from '@/components/ui/button';
+import { ButtonLink } from '@/components/ui/button-link';
+import { Card } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { executeRun, getRuns, type Run, type RunStatus } from '@/lib/api';
+
+const STATUS_FILTERS: { value: RunStatus | 'all'; label: string }[] = [
+  { value: 'all', label: 'Все' },
+  { value: 'pending', label: 'Ожидание' },
+  { value: 'running', label: 'Выполняется' },
+  { value: 'success', label: 'Успешно' },
+  { value: 'failed', label: 'Ошибка' },
+];
 
 export default function RunsPage() {
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState<RunStatus | 'all'>('all');
+  const [executingId, setExecutingId] = useState<number | null>(null);
+
   const { data: runs, isLoading, error } = useQuery({
     queryKey: ['runs'],
     queryFn: () => getRuns(),
+    refetchInterval: (query) => {
+      const hasRunning = query.state.data?.some((r) => r.status === 'running');
+      return hasRunning ? 2000 : false;
+    },
   });
 
-  if (isLoading) return <div>Загрузка запусков...</div>;
-  if (error) return <div className="text-red-500">Ошибка загрузки данных</div>;
+  const executeMutation = useMutation({
+    mutationFn: (runId: number) => executeRun(runId),
+    onMutate: (runId) => setExecutingId(runId),
+    onSettled: () => setExecutingId(null),
+    onSuccess: (_, runId) => {
+      queryClient.invalidateQueries({ queryKey: ['runs'] });
+      queryClient.invalidateQueries({ queryKey: ['run', runId] });
+    },
+  });
+
+  const filteredRuns = useMemo(() => {
+    if (!runs) return [];
+    if (statusFilter === 'all') return runs;
+    return runs.filter((run) => run.status === statusFilter);
+  }, [runs, statusFilter]);
+
+  if (isLoading) return <div className="text-foreground">Загрузка запусков...</div>;
+  if (error) return <div className="text-destructive">Ошибка загрузки данных</div>;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex flex-wrap justify-between items-center gap-4">
         <h1 className="text-2xl font-semibold">Запуски проверок</h1>
-        <button 
-          onClick={() => alert('Пока не реализовано')}
-          className="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-gray-800"
-        >
-          + Новый запуск
-        </button>
+        <ButtonLink href="/">+ Новый запуск</ButtonLink>
       </div>
 
-      <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">ID</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">Dataset ID</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">Статус</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">Начало</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-gray-500"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {runs?.map((run) => (
-              <tr key={run.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-mono text-sm">#{run.id}</td>
-                <td className="px-6 py-4">{run.dataset_id}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    run.status === 'success' ? 'bg-green-100 text-green-700' :
-                    run.status === 'failed' ? 'bg-red-100 text-red-700' :
-                    run.status === 'running' ? 'bg-blue-100 text-blue-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {run.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {new Date(run.started_at).toLocaleString('ru-RU')}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <Link 
-                    href={`/runs/${run.id}`}
-                    className="text-blue-600 hover:underline text-sm"
-                  >
-                    Подробнее →
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="flex flex-wrap gap-2">
+        {STATUS_FILTERS.map((filter) => (
+          <Button
+            key={filter.value}
+            variant={statusFilter === filter.value ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter(filter.value)}
+          >
+            {filter.label}
+            {runs && filter.value !== 'all' && (
+              <span className="ml-1.5 opacity-70">
+                ({runs.filter((r) => r.status === filter.value).length})
+              </span>
+            )}
+          </Button>
+        ))}
       </div>
+
+      <Card className="py-0">
+        {filteredRuns.length === 0 ? (
+          <div className="px-6 py-12 text-center text-foreground">
+            {statusFilter === 'all'
+              ? 'Запусков пока нет'
+              : 'Нет запусков с выбранным статусом'}
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Dataset ID</TableHead>
+                <TableHead>Статус</TableHead>
+                <TableHead>Сводка</TableHead>
+                <TableHead>Начало</TableHead>
+                <TableHead className="text-right">Действия</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredRuns.map((run) => (
+                <RunRow
+                  key={run.id}
+                  run={run}
+                  isExecuting={executingId === run.id}
+                  onExecute={() => executeMutation.mutate(run.id)}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Card>
     </div>
+  );
+}
+
+function RunRow({
+  run,
+  isExecuting,
+  onExecute,
+}: {
+  run: Run;
+  isExecuting: boolean;
+  onExecute: () => void;
+}) {
+  const canExecute = run.status !== 'running' && !isExecuting;
+
+  return (
+    <TableRow>
+      <TableCell className="font-mono">#{run.id}</TableCell>
+      <TableCell>{run.dataset_id}</TableCell>
+      <TableCell>
+        <StatusBadge status={run.status} />
+      </TableCell>
+      <TableCell>
+        {run.summary_json
+          ? `${run.summary_json.passed ?? 0}/${run.summary_json.total_rules ?? 0}`
+          : '—'}
+      </TableCell>
+      <TableCell>
+        {new Date(run.started_at).toLocaleString('ru-RU')}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExecute}
+            disabled={!canExecute}
+          >
+            {isExecuting || run.status === 'running' ? 'Запуск...' : 'Запустить'}
+          </Button>
+          <ButtonLink variant="link" size="sm" href={`/runs/${run.id}`}>
+            Подробнее →
+          </ButtonLink>
+        </div>
+      </TableCell>
+    </TableRow>
   );
 }
