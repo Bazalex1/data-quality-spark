@@ -1,3 +1,5 @@
+import csv
+import json
 import re
 import uuid
 from pathlib import Path
@@ -19,6 +21,35 @@ def _safe_filename(filename: str) -> str:
     name = Path(filename).name
     name = re.sub(r"[^a-zA-Z0-9._-]", "_", name)
     return name or "upload.csv"
+
+
+def _resolve_dataset_path(source_config_json: str | None) -> str | None:
+    if not source_config_json:
+        return None
+
+    config: str | dict | None = source_config_json
+    if isinstance(config, str):
+        try:
+            config = json.loads(config)
+        except json.JSONDecodeError:
+            return config.strip() or None
+
+    if isinstance(config, dict):
+        path = config.get("path")
+        return str(path) if path else None
+
+    return None
+
+
+def _read_csv_columns(file_path: str) -> list[str]:
+    with open(file_path, newline="", encoding="utf-8-sig") as csv_file:
+        reader = csv.reader(csv_file)
+        headers = next(reader, [])
+
+    columns = [column.strip() for column in headers if column and column.strip()]
+    if not columns:
+        raise HTTPException(status_code=400, detail="CSV file has no columns")
+    return columns
 
 
 @router.post("/upload")
@@ -69,6 +100,22 @@ def create_dataset(dataset: DatasetCreate, db: Session = Depends(get_db)):
 @router.get("/", response_model=List[DatasetResponse])
 def get_datasets(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return db.query(Dataset).offset(skip).limit(limit).all()
+
+
+@router.get("/{dataset_id}/columns")
+def get_dataset_columns(dataset_id: int, db: Session = Depends(get_db)):
+    dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+
+    file_path = _resolve_dataset_path(dataset.source_config_json)
+    if not file_path:
+        raise HTTPException(status_code=404, detail="Dataset file path is not configured")
+
+    if not Path(file_path).exists():
+        raise HTTPException(status_code=404, detail=f"Dataset file not found: {file_path}")
+
+    return {"columns": _read_csv_columns(file_path)}
 
 
 @router.get("/{dataset_id}", response_model=DatasetResponse)

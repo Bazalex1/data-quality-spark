@@ -82,7 +82,11 @@ export type RuleType =
   | 'unique'
   | 'min_max'
   | 'not_equal'
-  | 'not_zero';
+  | 'not_zero'
+  | 'regex_match'
+  | 'accepted_values'
+  | 'row_count'
+  | 'schema_match';
 
 export interface RuleCreate {
   dataset_id: number;
@@ -140,6 +144,13 @@ export const executeRun = async (runId: number) => {
 
 export const getDatasets = async () => {
   const res = await api.get<Dataset[]>('/datasets/');
+  return res.data;
+};
+
+export const getDatasetColumns = async (datasetId: number) => {
+  const res = await api.get<{ columns: string[] }>(
+    `/datasets/${datasetId}/columns`
+  );
   return res.data;
 };
 

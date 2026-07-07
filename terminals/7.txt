@@ -3,7 +3,7 @@ pid: 12680
 cwd: "C:\Users\Lehich\Desktop\Практика\data-quality-spark"
 command: "Set-Location \"C:\\Users\\Lehich\\Desktop\\Практика\\data-quality-spark\"; docker compose build backend; docker compose up -d backend"
 started_at: 2026-07-07T11:06:03.604Z
-running_for_ms: 6585007  
+running_for_ms: 14115006 
 ---
 #0 building with "default" instance using docker driver
 

@@ -3,7 +3,7 @@ pid: 7288
 cwd: "C:\Users\Lehich\Desktop\Практика\data-quality-spark"
 command: "Set-Location \"C:\\Users\\Lehich\\Desktop\\Практика\\data-quality-spark\\frontend\"; npx shadcn@latest add badge card table select -y"
 started_at: 2026-07-07T10:33:35.657Z
-running_for_ms: 8534997  
+running_for_ms: 16065002 
 ---
 - Checking registry.
 √ Checking registry.

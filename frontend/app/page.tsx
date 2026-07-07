@@ -24,7 +24,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  ColumnErrorsChart,
+  RunStatusChart,
+} from '@/components/dashboard-charts';
+import {
+  buildColumnErrorsChartData,
   buildDashboardData,
+  buildRunStatusChartData,
   findLatestRunForDetails,
   type ColumnResult,
   type DashboardError,
@@ -94,6 +100,10 @@ export default function DashboardPage() {
   };
 
   const { statistics: stats } = dashboard;
+  const runStatusChartData = buildRunStatusChartData(stats);
+  const columnErrorsChartData = buildColumnErrorsChartData(
+    dashboard.columnResults
+  );
 
   return (
     <div className="space-y-8">
@@ -142,6 +152,20 @@ export default function DashboardPage() {
             valueClassName={
               stats.totalErrorsFound > 0 ? 'text-destructive' : 'text-green-600'
             }
+          />
+        </div>
+      </section>
+
+      <section>
+        <SectionTitle
+          title="Графики"
+          description="Визуализация статусов запусков и ошибок по колонкам"
+        />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <RunStatusChart data={runStatusChartData} />
+          <ColumnErrorsChart
+            data={columnErrorsChartData}
+            latestRunId={dashboard.latestRunId}
           />
         </div>
       </section>

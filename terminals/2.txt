@@ -3,7 +3,7 @@ pid: 22516
 cwd: "C:\Users\Lehich\Desktop\Практика\data-quality-spark"
 command: "Set-Location \"C:\\Users\\Lehich\\Desktop\\Практика\\data-quality-spark\\frontend\"; npx shadcn@latest init -d -y"
 started_at: 2026-07-07T10:31:08.927Z
-running_for_ms: 8680001  
+running_for_ms: 16210004 
 ---
 npm warn exec The following package was not found and will be installed: shadcn@4.13.0
 - Preflight checks.

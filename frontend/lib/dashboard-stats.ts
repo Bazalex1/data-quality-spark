@@ -227,6 +227,40 @@ function buildColumnResults(
     .sort((a, b) => b.totalErrors - a.totalErrors);
 }
 
+export interface ChartSlice {
+  name: string;
+  value: number;
+  fill: string;
+}
+
+export interface ColumnErrorChartItem {
+  column: string;
+  errors: number;
+}
+
+export function buildRunStatusChartData(
+  statistics: DashboardStatistics
+): ChartSlice[] {
+  return [
+    { name: 'Успешно', value: statistics.successfulRuns, fill: '#16a34a' },
+    { name: 'С ошибками', value: statistics.failedRuns, fill: '#dc2626' },
+    { name: 'Выполняется', value: statistics.runningRuns, fill: '#2563eb' },
+    { name: 'Ожидание', value: statistics.pendingRuns, fill: '#6b7280' },
+  ].filter((item) => item.value > 0);
+}
+
+export function buildColumnErrorsChartData(
+  columnResults: ColumnResult[]
+): ColumnErrorChartItem[] {
+  return columnResults
+    .filter((col) => col.totalErrors > 0)
+    .map((col) => ({
+      column: col.columnName,
+      errors: col.totalErrors,
+    }))
+    .slice(0, 8);
+}
+
 export function findLatestRunForDetails(runs: Run[]): Run | null {
   const sorted = [...runs].sort(
     (a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime()

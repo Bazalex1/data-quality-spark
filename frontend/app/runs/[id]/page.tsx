@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { executeRun, getRun, getRules } from '@/lib/api';
+import { exportRunAsCsv, exportRunAsJson } from '@/lib/export-run';
 import { cn } from '@/lib/utils';
 
 function formatDate(date: string | null): string {
@@ -95,14 +96,30 @@ export default function RunDetailPage() {
           <h1 className="text-2xl font-semibold mb-2">Запуск #{run.id}</h1>
           <StatusBadge status={run.status} />
         </div>
-        <Button
-          onClick={() => executeMutation.mutate()}
-          disabled={executeMutation.isPending || run.status === 'running'}
-        >
-          {executeMutation.isPending || run.status === 'running'
-            ? 'Запуск...'
-            : 'Запустить проверку'}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => exportRunAsJson(run)}
+            disabled={!run.results.length}
+          >
+            Export JSON
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => exportRunAsCsv(run, rulesMap)}
+            disabled={!run.results.length}
+          >
+            Export CSV
+          </Button>
+          <Button
+            onClick={() => executeMutation.mutate()}
+            disabled={executeMutation.isPending || run.status === 'running'}
+          >
+            {executeMutation.isPending || run.status === 'running'
+              ? 'Запуск...'
+              : 'Перезапустить проверку'}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

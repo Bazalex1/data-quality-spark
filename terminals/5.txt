@@ -3,7 +3,7 @@ pid: 22144
 cwd: "C:\Users\Lehich\Desktop\Практика\data-quality-spark"
 command: "Set-Location \"C:\\Users\\Lehich\\Desktop\\Практика\\data-quality-spark\\frontend\"; npm run build"
 started_at: 2026-07-07T10:38:42.068Z
-running_for_ms: 8224996  
+running_for_ms: 15759997 
 ---
 
 > frontend@0.1.0 build
