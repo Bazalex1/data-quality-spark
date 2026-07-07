@@ -6,8 +6,15 @@ from app.core.database import get_db
 from app.models.run import Run
 from app.models.dataset import Dataset
 from app.schemas.run import RunCreate, RunResponse, RunDetailResponse
+from app.schemas.run_analysis import RunAnalysisResponse
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from app.services.execution_engine import run_quality_checks
+from app.services.llm_result_analyzer import (
+    OllamaUnavailableError,
+    RunNotReadyForAnalysisError,
+    analyze_run,
+    get_cached_analysis,
+)
 import threading
 
 router = APIRouter(prefix="/runs", tags=["Runs"])
@@ -42,6 +49,37 @@ def get_run(run_id: int, db: Session = Depends(get_db)):
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
     return run
+
+
+@router.get("/{run_id}/analysis", response_model=RunAnalysisResponse)
+def get_run_analysis(run_id: int, db: Session = Depends(get_db)):
+    try:
+        analysis = get_cached_analysis(db, run_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return RunAnalysisResponse(
+        run_id=run_id,
+        analysis=analysis,
+        cached=analysis is not None,
+    )
+
+
+@router.post("/{run_id}/analyze", response_model=RunAnalysisResponse)
+async def create_run_analysis(run_id: int, db: Session = Depends(get_db)):
+    try:
+        analysis, cached = await analyze_run(db, run_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Run not found")
+    except RunNotReadyForAnalysisError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except OllamaUnavailableError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+    return RunAnalysisResponse(
+        run_id=run_id,
+        analysis=analysis,
+        cached=cached,
+    )
 
 
 @router.post("/{run_id}/execute")

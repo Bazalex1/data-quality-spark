@@ -142,6 +142,22 @@ export const executeRun = async (runId: number) => {
   return res.data;
 };
 
+export interface RunAnalysis {
+  run_id: number;
+  analysis: string | null;
+  cached: boolean;
+}
+
+export const getRunAnalysis = async (runId: number) => {
+  const res = await api.get<RunAnalysis>(`/runs/${runId}/analysis`);
+  return res.data;
+};
+
+export const analyzeRun = async (runId: number) => {
+  const res = await api.post<RunAnalysis>(`/runs/${runId}/analyze`);
+  return res.data;
+};
+
 export const getDatasets = async () => {
   const res = await api.get<Dataset[]>('/datasets/');
   return res.data;

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import RunLlmAnalysis from '@/components/run-llm-analysis';
 import SampleBadRowsTable from '@/components/SampleBadRowsTable';
 import StatusBadge from '@/components/StatusBadge';
 import { Badge } from '@/components/ui/badge';
@@ -154,6 +155,12 @@ export default function RunDetailPage() {
           />
         </div>
       )}
+
+      <RunLlmAnalysis
+        runId={run.id}
+        status={run.status}
+        hasResults={run.results.length > 0}
+      />
 
       <div>
         <h2 className="text-lg font-semibold mb-4">Результаты правил</h2>

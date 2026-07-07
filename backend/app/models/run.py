@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String, DateTime, ForeignKey, func, JSON
+from sqlalchemy import String, Text, DateTime, ForeignKey, func, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -22,6 +22,7 @@ class Run(Base):
         DateTime(timezone=True), nullable=True
     )
     summary_json: Mapped[dict] = mapped_column(JSON, nullable=True)
+    llm_analysis: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     dataset: Mapped["Dataset"] = relationship()
     results: Mapped[list["Result"]] = relationship(

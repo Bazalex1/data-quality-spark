@@ -11,6 +11,10 @@ class Settings(BaseSettings):
         "postgresql+psycopg2://postgres:postgres@localhost:5433/dq_service"
     )
 
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "qwen3:8b"
+    OLLAMA_TIMEOUT: float = 300.0
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
