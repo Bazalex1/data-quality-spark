@@ -1,9 +1,0 @@
----
-pid: 1540
-cwd: "C:\Users\Lehich\Desktop\Практика\data-quality-spark"
-command: "try { $r = Invoke-WebRequest -Uri \"http://localhost:8000/api/v1/runs/11/analyze\" -Method POST -UseBasicParsing -TimeoutSec 180; Write-Output \"Status: $($r.StatusCode)\"; Write-Output $r.Content.Substring(0, [Math]::Min(400, $r.Content.Length)) } catch { Write-Output \"Error: $($_.Exception.Message)\"; if ($_.ErrorDetails) { Write-Output $_.ErrorDetails.Message } }"
-started_at: 2026-07-07T15:25:42.398Z
-running_for_ms: 570001   
----
-Error: ������� �ࢥ� �����⨫ �訡��: (503) �ࢥ� �� ����㯥�.
-{"detail":"ॢ�襭� �६� �������� �⢥� �� Ollama. ��஡�� ����� ��� �롥�� ����� ���� ������."}

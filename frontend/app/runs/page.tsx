@@ -1,11 +1,14 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import StatusBadge from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Card } from '@/components/ui/card';
+import { Dialog } from '@/components/ui/dialog';
+import { FormSelect } from '@/components/ui/form-select';
 import {
   Table,
   TableBody,
@@ -14,7 +17,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { executeRun, getRuns, type Run, type RunStatus } from '@/lib/api';
+import {
+  createRun,
+  executeRun,
+  getDatasets,
+  getRuns,
+  type Run,
+  type RunStatus,
+} from '@/lib/api';
+import { getErrorMessage } from '@/lib/errors';
 
 const STATUS_FILTERS: { value: RunStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Все' },
@@ -25,9 +36,18 @@ const STATUS_FILTERS: { value: RunStatus | 'all'; label: string }[] = [
 ];
 
 export default function RunsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<RunStatus | 'all'>('all');
   const [executingId, setExecutingId] = useState<number | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [selectedDatasetId, setSelectedDatasetId] = useState('');
+
+  const { data: datasets, isLoading: datasetsLoading } = useQuery({
+    queryKey: ['datasets'],
+    queryFn: () => getDatasets(),
+    enabled: createDialogOpen,
+  });
 
   const { data: runs, isLoading, error } = useQuery({
     queryKey: ['runs'],
@@ -48,6 +68,16 @@ export default function RunsPage() {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: (datasetId: number) => createRun(datasetId),
+    onSuccess: (run) => {
+      queryClient.invalidateQueries({ queryKey: ['runs'] });
+      setCreateDialogOpen(false);
+      setSelectedDatasetId('');
+      router.push(`/runs/${run.id}`);
+    },
+  });
+
   const filteredRuns = useMemo(() => {
     if (!runs) return [];
     if (statusFilter === 'all') return runs;
@@ -61,8 +91,75 @@ export default function RunsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-4">
         <h1 className="text-2xl font-semibold">Запуски проверок</h1>
-        <ButtonLink href="/">+ Новый запуск</ButtonLink>
+        <Button onClick={() => setCreateDialogOpen(true)}>+ Новый запуск</Button>
       </div>
+
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => {
+          if (!createMutation.isPending) {
+            setCreateDialogOpen(false);
+            setSelectedDatasetId('');
+          }
+        }}
+        title="Новый запуск"
+        description="Выберите датасет и создайте новую проверку качества"
+      >
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label
+              htmlFor="new-run-dataset"
+              className="text-sm font-medium text-foreground"
+            >
+              Датасет
+            </label>
+            <FormSelect
+              id="new-run-dataset"
+              value={selectedDatasetId}
+              onValueChange={setSelectedDatasetId}
+              disabled={datasetsLoading || !datasets?.length}
+              placeholder={
+                datasetsLoading ? 'Загрузка...' : 'Выберите датасет'
+              }
+              options={
+                datasets?.map((ds) => ({
+                  value: String(ds.id),
+                  label: `${ds.name} (#${ds.id})`,
+                })) ?? []
+              }
+            />
+          </div>
+
+          {createMutation.error ? (
+            <p className="text-sm text-destructive">
+              {getErrorMessage(createMutation.error)}
+            </p>
+          ) : null}
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setCreateDialogOpen(false)}
+              disabled={createMutation.isPending}
+            >
+              Отмена
+            </Button>
+            <Button
+              onClick={() => {
+                if (!selectedDatasetId) return;
+                createMutation.mutate(Number(selectedDatasetId));
+              }}
+              disabled={
+                !selectedDatasetId ||
+                createMutation.isPending ||
+                datasetsLoading
+              }
+            >
+              {createMutation.isPending ? 'Создание...' : 'Создать запуск'}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
 
       <div className="flex flex-wrap gap-2">
         {STATUS_FILTERS.map((filter) => (

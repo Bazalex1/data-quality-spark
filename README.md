@@ -1,60 +1,100 @@
-# data-quality-spark
+# Data Quality Spark
 
-Платформа проверки качества данных на Apache Spark.
+Сервис проверки качества данных на **Apache Spark** с веб-интерфейсом, REST API и AI-анализом результатов.
 
-## Структура
+---
 
-```
-data-quality-spark/
-├── backend/          # FastAPI + Spark
-├── frontend/         # Next.js
-├── examples/         # Примеры интеграции
-├── docs/             # Документация
-├── sample_data/      # Демо CSV с ошибками
-├── docker-compose.yml
-└── Makefile
-```
+## Документация для защиты
+
+| Файл | О чём |
+|------|--------|
+| [ОПИСАНИЕ_ПРОЕКТА.md](./ОПИСАНИЕ_ПРОЕКТА.md) | Что это, зачем, основные возможности |
+| [КАК_ЭТО_РАБОТАЕТ.md](./КАК_ЭТО_РАБОТАЕТ.md) | Архитектура, поток данных, API |
+| [ДЕМО_ДЛЯ_ЗАЩИТЫ.md](./ДЕМО_ДЛЯ_ЗАЩИТЫ.md) | Сценарий показа и ответы на вопросы |
+
+---
 
 ## Быстрый старт
 
 ```bash
-# Запуск всех сервисов
-make up
+# Backend + PostgreSQL
+docker compose up -d
 
-# Или вручную
-docker compose up --build
+# Frontend
+cd frontend && npm install && npm run dev
 ```
 
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000/docs
-- PostgreSQL: localhost:5432
+| Сервис | URL |
+|--------|-----|
+| Frontend | http://localhost:3000 |
+| Backend API / Swagger | http://localhost:8000/docs |
+| PostgreSQL | localhost:**5433** |
 
-## Локальная разработка
-
-### Backend
+### Ollama (AI-анализ)
 
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+ollama pull qwen3:8b   # или llama3.2:3b — быстрее
 ```
 
-### Frontend
+Ollama должна быть запущена на хосте. Backend в Docker обращается к ней через `host.docker.internal:11434`.
 
-```bash
-cd frontend
-npm install
-npm run dev
+---
+
+## Структура проекта
+
+```
+data-quality-spark/
+├── backend/          # FastAPI, Spark execution_engine, LLM-анализатор
+├── frontend/         # Next.js UI (дашборд, датасеты, правила, запуски)
+├── examples/         # Airflow DAG, pipeline_integration.py
+├── data/             # CSV-файлы (volume для Docker)
+├── docs/             # Техническая архитектура
+└── docker-compose.yml
 ```
 
-### Тесты
+---
+
+## Основной сценарий
+
+1. Создать **датасет** (путь к CSV или upload)
+2. Настроить **правила** (`not_null`, `unique`, `min_max`, …)
+3. Создать и **запустить run** — Spark проверяет файл
+4. Смотреть результаты, экспорт, **AI-анализ** на странице run
+
+---
+
+## Примеры интеграции
 
 ```bash
+# Простой HTTP-клиент
+python examples/pipeline_integration.py
+
+# Airflow DAG (или как скрипт)
+set DATASET_ID=1
+python examples/airflow_dag_example.py
+```
+
+---
+
+## Разработка
+
+```bash
+# Backend локально
+cd backend && pip install -r requirements.txt && uvicorn app.main:app --reload
+
+# Миграции
+cd backend && alembic upgrade head
+
+# Тесты
 make test
 ```
 
-## Пример пайплайна
+---
 
-```bash
-python examples/pipeline_integration.py
-```
+## Стек
+
+- **Frontend:** Next.js, React, TypeScript, TanStack Query, Tailwind, Recharts
+- **Backend:** FastAPI, SQLAlchemy, PySpark, Alembic
+- **БД:** PostgreSQL
+- **AI:** Ollama (локальные LLM)
+- **Инфра:** Docker Compose

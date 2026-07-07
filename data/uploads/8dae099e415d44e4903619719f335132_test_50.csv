@@ -1,0 +1,51 @@
+id,name,email,age,city,money
+1,Иван Петров,ivan.petrov@mail.ru,28,Москва,24500
+2,Мария Сидорова,maria.sidorova@gmail.com,34,Санкт-Петербург,18700
+3,Алексей Козлов,alexey.kozlov@yandex.ru,abc,Казань,32000
+4,,dmitry.volkov@mail.ru,41,Новосибирск,15600
+5,Елена Морозова,elena.morozova@gmail.com,-7,Екатеринбург,9800
+6,Пётр Новиков,petr.novikov@mail.ru,150,Омск,45000
+7,Анна Лебедева,anna.lebedeva@yandex.ru,29,Самара,21300
+8,Сергей Волков,,37,Воронеж,12400
+9,Ольга Соколова,olga.sokolova@company.com,31,,28900
+10,Николай Орлов,nikolay.orlov@mail.ru,45,Ростов-на-Дону,16700
+11,Дарья Козлова,daria.kozlova@gmail.com,26,Краснодар,19800
+12,Максим Иванов,maxim.ivanov@yandex.ru,38,Нижний Новгород,22400
+13,,ekaterina.smirnova@mail.ru,29,Челябинск,14500
+14,Артём Кузнецов,artem.kuznetsov@gmail.com,42,Самара,30100
+15,Полина Морозова,polina.morozova@yandex.ru,24,Казань,8700
+16,Владимир Соколов,vladimir.sokolov@mail.ru,55,Москва,38200
+17,Юлия Новикова,,31,Санкт-Петербург,15600
+18,Денис Лебедев,denis.lebedev@gmail.com,27,Екатеринбург,21900
+19,Анастасия Волкова,anastasia.volkova@yandex.ru,33,Новосибирск,13400
+20,Игорь Смирнов,igor.smirnov@mail.ru,48,Краснодар,26700
+21,Екатерина Иванова,ekaterina.ivanova@gmail.com,25,Нижний Новгород,9800
+22,Роман Козлов,,39,Челябинск,17500
+23,Виктория Новикова,viktoria.novikova@yandex.ru,30,Ростов-на-Дону,20300
+24,Александр Морозов,alexander.morozov@mail.ru,52,Воронеж,34500
+25,,daria.kozlova@invalid,28,Москва,11200
+26,Михаил Соколов,mikhail.sokolov@gmail.com,36,Санкт-Петербург,18900
+27,Ольга Лебедева,olga.lebedeva@yandex.ru,41,Казань,25600
+28,Сергей Волков,sergey.volkov@mail.ru,29,Екатеринбург,14300
+29,Анна Смирнова,,33,Новосибирск,17800
+30,Дмитрий Иванов,dmitry.ivanov@gmail.com,47,Самара,29100
+31,Мария Козлова,maria.kozlova@yandex.ru,24,Краснодар,8700
+32,,maxim.novikov@mail.ru,38,Нижний Новгород,21400
+33,Елена Соколова,elena.sokolova@gmail.com,31,Челябинск,16500
+34,Алексей Новиков,alexey.novikov@yandex.ru,44,Ростов-на-Дону,23800
+35,Полина Морозова,,27,Воронеж,10900
+36,Владимир Лебедев,vladimir.lebedev@mail.ru,51,Москва,36700
+37,Юлия Иванова,yulia.ivanova@gmail.com,29,Санкт-Петербург,15200
+38,Денис Козлов,,35,Казань,18700
+39,Анастасия Смирнова,anastasia.smirnova@yandex.ru,26,Екатеринбург,9800
+40,Игорь Волков,igor.volkov@mail.ru,42,Новосибирск,25300
+41,Екатерина Новикова,,38,Самара,17600
+42,Роман Морозов,roman.morozov@gmail.com,33,Краснодар,20100
+43,Виктория Соколова,viktoria.sokolova@yandex.ru,27,Нижний Новгород,13400
+44,Александр Лебедев,,49,Челябинск,28900
+45,Михаил Иванова,mikhail.ivanov@mail.ru,31,Ростов-на-Дону,16500
+46,,daria.smirnova@invalid.com,28,Воронеж,11200
+47,Ольга Козлова,olga.kozlova@gmail.com,36,Москва,22400
+48,Сергей Новиков,,41,Санкт-Петербург,19800
+49,Анна Волкова,anna.volkova@yandex.ru,29,Казань,14300
+50,Дмитрий Морозов,dmitry.morozov@mail.ru,45,Екатеринбург,26700
