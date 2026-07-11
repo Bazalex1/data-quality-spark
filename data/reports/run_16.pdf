@@ -1,0 +1,73 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 755 >>
+stream
+BT
+/F1 10 Tf
+50 760 Td
+12 TL
+(Data Quality Protocol - Run #16) Tj
+T*
+(Dataset ID: 1) Tj
+T*
+(Status: success) Tj
+T*
+(Started: 2026-07-07T16:36:52.307824+00:00) Tj
+T*
+(Finished: 2026-07-11T20:00:34.705355+00:00) Tj
+T*
+(Generated: 2026-07-11T20:01:03.238287+00:00) Tj
+T*
+() Tj
+T*
+(Total rules: 6) Tj
+T*
+(Passed: 1) Tj
+T*
+(Failed: 5) Tj
+T*
+(Success rate: 16.67%) Tj
+T*
+() Tj
+T*
+(Results:) Tj
+T*
+(- [FAIL] ??????? ?? 0 ?? 120 ??? \(min_max\) failed_count=2) Tj
+T*
+(- [PASS] ID ?????????? \(unique\) failed_count=0) Tj
+T*
+(- [FAIL] ??? ??????????? \(not_null\) failed_count=1) Tj
+T*
+(- [FAIL] Email ?????????? \(not_null\) failed_count=1) Tj
+T*
+(- [FAIL] ??????? ?????????? \(not_null\) failed_count=1) Tj
+T*
+(- [FAIL] Age > 30 \(min_max\) failed_count=4) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001047 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1117
+%%EOF

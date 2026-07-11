@@ -12,10 +12,10 @@ class Dataset(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     source_type: Mapped[str] = mapped_column(
         String(50), nullable=False
-    )  # file | path | spark_df
+    )  # file | path | csv | spark_df
     source_config_json: Mapped[str] = mapped_column(
         String, nullable=True
-    )  # JSON как строка
+    )  # JSON: {"path": "...", "format": "csv|parquet|json|orc", "options": {...}}
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

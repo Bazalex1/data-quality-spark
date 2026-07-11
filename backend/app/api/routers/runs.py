@@ -1,21 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session, joinedload
+import threading
 from typing import List
 
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
+from sqlalchemy.orm import Session, joinedload
+
 from app.core.database import get_db
-from app.models.run import Run
 from app.models.dataset import Dataset
+from app.models.run import Run
 from app.schemas.run import RunCreate, RunResponse, RunDetailResponse
 from app.schemas.run_analysis import RunAnalysisResponse
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from app.services.execution_engine import run_quality_checks
+from app.services.exporter import ExportError, SUPPORTED_FORMATS, export_run
 from app.services.llm_result_analyzer import (
     OllamaUnavailableError,
     RunNotReadyForAnalysisError,
     analyze_run,
     get_cached_analysis,
 )
-import threading
 
 router = APIRouter(prefix="/runs", tags=["Runs"])
 
@@ -51,6 +53,29 @@ def get_run(run_id: int, db: Session = Depends(get_db)):
     return run
 
 
+@router.get("/{run_id}/export")
+def export_run_report(
+    run_id: int,
+    format: str = Query("json", description=f"One of: {', '.join(SUPPORTED_FORMATS)}"),
+    db: Session = Depends(get_db),
+):
+    """Экспорт итогового протокола: json | csv | html | pdf."""
+    try:
+        content, media_type, ext, _path = export_run(db, run_id, format, persist=True)
+    except ExportError as exc:
+        message = str(exc)
+        if message == "Run not found":
+            raise HTTPException(status_code=404, detail=message) from exc
+        raise HTTPException(status_code=400, detail=message) from exc
+
+    filename = f"run_{run_id}.{ext}"
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.get("/{run_id}/analysis", response_model=RunAnalysisResponse)
 def get_run_analysis(run_id: int, db: Session = Depends(get_db)):
     try:
@@ -83,15 +108,16 @@ async def create_run_analysis(run_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{run_id}/execute")
-def execute_run(run_id: int, background_tasks: BackgroundTasks = None):
+def execute_run(run_id: int, db: Session = Depends(get_db)):
     """
     Запускает проверку качества для существующего run.
-    Пока в отдельном потоке (простой вариант).
+    Выполняется в отдельном потоке (простой вариант для практики).
     """
-    from fastapi import BackgroundTasks
+    run = db.query(Run).filter(Run.id == run_id).first()
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
 
-    # Запускаем в фоне
-    thread = threading.Thread(target=run_quality_checks, args=(run_id,))
+    thread = threading.Thread(target=run_quality_checks, args=(run_id,), daemon=True)
     thread.start()
 
     return {"message": f"Quality check for run {run_id} started in background"}

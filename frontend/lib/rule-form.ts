@@ -13,8 +13,17 @@ export const RULE_TYPE_OPTIONS: {
   { value: 'not_zero', label: 'Not Zero', description: 'Значение не должно быть нулём', level: 'column' },
   { value: 'regex_match', label: 'Regex Match', description: 'Значение должно соответствовать регулярному выражению', level: 'column' },
   { value: 'accepted_values', label: 'Accepted Values', description: 'Значение должно быть из списка допустимых', level: 'column' },
+  { value: 'freshness', label: 'Freshness', description: 'Максимальный timestamp колонки не старше N часов/дней', level: 'column' },
+  { value: 'null_percent', label: 'Null Percent', description: 'Процент NULL в колонке не выше порога', level: 'column' },
+  { value: 'date_not_future', label: 'Date Not Future', description: 'Дата/время в колонке не в будущем', level: 'column' },
   { value: 'row_count', label: 'Row Count', description: 'Количество строк в датасете в заданных пределах', level: 'dataset' },
   { value: 'schema_match', label: 'Schema Match', description: 'Датасет должен содержать указанные колонки', level: 'dataset' },
+  {
+    value: 'custom_sql',
+    label: 'Custom SQL / Spark',
+    description: 'Spark SQL expression: true для «плохих» строк (например end_date < start_date)',
+    level: 'dataset',
+  },
 ];
 
 const COLUMN_LEVEL_RULES: RuleType[] = [
@@ -25,9 +34,12 @@ const COLUMN_LEVEL_RULES: RuleType[] = [
   'not_zero',
   'regex_match',
   'accepted_values',
+  'freshness',
+  'null_percent',
+  'date_not_future',
 ];
 
-const DATASET_LEVEL_RULES: RuleType[] = ['row_count', 'schema_match'];
+const DATASET_LEVEL_RULES: RuleType[] = ['row_count', 'schema_match', 'custom_sql'];
 
 export interface RuleFormState {
   dataset_id: string;
@@ -42,6 +54,10 @@ export interface RuleFormState {
   min_rows: string;
   max_rows: string;
   expected_columns: string;
+  max_age_hours: string;
+  max_age_days: string;
+  max_null_percent: string;
+  custom_condition: string;
   severity: 'warning' | 'critical';
   is_active: boolean;
 }
@@ -59,6 +75,10 @@ export const initialRuleFormState: RuleFormState = {
   min_rows: '',
   max_rows: '',
   expected_columns: '',
+  max_age_hours: '',
+  max_age_days: '',
+  max_null_percent: '',
+  custom_condition: '',
   severity: 'warning',
   is_active: true,
 };
@@ -97,6 +117,18 @@ export function ruleTypeNeedsRowCount(ruleType: RuleType): boolean {
 
 export function ruleTypeNeedsExpectedColumns(ruleType: RuleType): boolean {
   return ruleType === 'schema_match';
+}
+
+export function ruleTypeNeedsFreshness(ruleType: RuleType): boolean {
+  return ruleType === 'freshness';
+}
+
+export function ruleTypeNeedsNullPercent(ruleType: RuleType): boolean {
+  return ruleType === 'null_percent';
+}
+
+export function ruleTypeNeedsCustomSql(ruleType: RuleType): boolean {
+  return ruleType === 'custom_sql';
 }
 
 export function parseListInput(value: string): string[] {
@@ -163,6 +195,37 @@ export function validateRuleForm(form: RuleFormState): string | null {
     }
   }
 
+  if (ruleTypeNeedsFreshness(form.rule_type)) {
+    if (form.max_age_hours === '' && form.max_age_days === '') {
+      return 'Укажите max_age_hours и/или max_age_days';
+    }
+    if (form.max_age_hours !== '' && Number.isNaN(Number(form.max_age_hours))) {
+      return 'max_age_hours должно быть числом';
+    }
+    if (form.max_age_days !== '' && Number.isNaN(Number(form.max_age_days))) {
+      return 'max_age_days должно быть числом';
+    }
+  }
+
+  if (ruleTypeNeedsNullPercent(form.rule_type)) {
+    if (form.max_null_percent === '') {
+      return 'Укажите max_null_percent (0–100)';
+    }
+    const value = Number(form.max_null_percent);
+    if (Number.isNaN(value) || value < 0 || value > 100) {
+      return 'max_null_percent должно быть числом от 0 до 100';
+    }
+  }
+
+  if (ruleTypeNeedsCustomSql(form.rule_type)) {
+    if (!form.custom_condition.trim()) {
+      return 'Укажите Spark SQL condition для плохих строк';
+    }
+    if (form.custom_condition.includes(';')) {
+      return 'Символ «;» в condition запрещён';
+    }
+  }
+
   return null;
 }
 
@@ -186,6 +249,18 @@ export function ruleToFormState(rule: Rule): RuleFormState {
     expected_columns: Array.isArray(params.expected_columns)
       ? params.expected_columns.map(String).join(', ')
       : '',
+    max_age_hours: params.max_age_hours != null ? String(params.max_age_hours) : '',
+    max_age_days: params.max_age_days != null ? String(params.max_age_days) : '',
+    max_null_percent:
+      params.max_null_percent != null ? String(params.max_null_percent) : '',
+    custom_condition:
+      typeof params.condition === 'string'
+        ? params.condition
+        : typeof params.expression === 'string'
+          ? params.expression
+          : typeof params.sql === 'string'
+            ? params.sql
+            : '',
     severity: rule.severity,
     is_active: rule.is_active,
   };
@@ -226,6 +301,23 @@ function buildParamsJson(form: RuleFormState): Record<string, unknown> | null {
 
   if (ruleTypeNeedsExpectedColumns(form.rule_type)) {
     return { expected_columns: parseListInput(form.expected_columns) };
+  }
+
+  if (ruleTypeNeedsFreshness(form.rule_type)) {
+    const params: Record<string, unknown> = {};
+    const hours = parseOptionalInt(form.max_age_hours);
+    const days = parseOptionalInt(form.max_age_days);
+    if (hours !== undefined) params.max_age_hours = hours;
+    if (days !== undefined) params.max_age_days = days;
+    return params;
+  }
+
+  if (ruleTypeNeedsNullPercent(form.rule_type)) {
+    return { max_null_percent: Number(form.max_null_percent) };
+  }
+
+  if (ruleTypeNeedsCustomSql(form.rule_type)) {
+    return { condition: form.custom_condition.trim() };
   }
 
   return null;

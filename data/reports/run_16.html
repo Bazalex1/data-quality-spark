@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>DQ Report — Run #16</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+    h1, h2 { margin-bottom: 8px; }
+    .meta, .stats { margin-bottom: 20px; }
+    .stats span { display: inline-block; margin-right: 16px; padding: 6px 10px; background: #f3f4f6; border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 8px; vertical-align: top; text-align: left; }
+    th { background: #f9fafb; }
+    tr.fail { background: #fef2f2; }
+    tr.pass { background: #f0fdf4; }
+    code { white-space: pre-wrap; word-break: break-word; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Итоговый протокол проверки качества данных</h1>
+  <div class="meta">
+    <p><strong>Run ID:</strong> 16</p>
+    <p><strong>Dataset ID:</strong> 1</p>
+    <p><strong>Status:</strong> success</p>
+    <p><strong>Started:</strong> 2026-07-07T16:36:52.307824+00:00</p>
+    <p><strong>Finished:</strong> 2026-07-11T20:00:34.705355+00:00</p>
+    <p><strong>Generated:</strong> 2026-07-11T20:00:41.174465+00:00</p>
+  </div>
+  <div class="stats">
+    <span>Всего правил: 6</span>
+    <span>Пройдено: 1</span>
+    <span>Не пройдено: 5</span>
+    <span>Успешность: 16.67%</span>
+  </div>
+  <h2>Результаты правил</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Rule ID</th>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Column</th>
+        <th>Severity</th>
+        <th>Passed</th>
+        <th>Failed count</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class='fail'><td>4</td><td>Возраст от 0 до 120 лет</td><td>min_max</td><td>age</td><td>critical</td><td><strong>FAIL</strong></td><td>2</td><td><code>{&quot;out_of_range&quot;: 2, &quot;min&quot;: 0, &quot;max&quot;: 120, &quot;sample_bad_rows&quot;: [{&quot;id&quot;: 5, &quot;name&quot;: &quot;Елена Волкова&quot;, &quot;email&quot;: &quot;elena@gmail.com&quot;, &quot;age&quot;: &quot;-5&quot;, &quot;city&quot;: &quot;Екатеринбург&quot;}, {&quot;id&quot;: 6, &quot;name&quot;: &quot;Пётр Новиков&quot;, &quot;email&quot;: &quot;petr@mail.ru&quot;, &quot;age&quot;: &quot;150&quot;, &quot;city&quot;: &quot;Омск&quot;}]}</code></td></tr><tr class='pass'><td>5</td><td>ID уникальный</td><td>unique</td><td>id</td><td>critical</td><td><strong>PASS</strong></td><td>0</td><td><code>{&quot;duplicate_count&quot;: 0, &quot;sample_bad_rows&quot;: []}</code></td></tr><tr class='fail'><td>1</td><td>Имя обязательно</td><td>not_null</td><td>name</td><td>critical</td><td><strong>FAIL</strong></td><td>1</td><td><code>{&quot;null_count&quot;: 1, &quot;sample_bad_rows&quot;: [{&quot;id&quot;: 4, &quot;name&quot;: null, &quot;email&quot;: &quot;dmitry@yandex.ru&quot;, &quot;age&quot;: &quot;41&quot;, &quot;city&quot;: &quot;Новосибирск&quot;}]}</code></td></tr><tr class='fail'><td>2</td><td>Email обязателен</td><td>not_null</td><td>email</td><td>warning</td><td><strong>FAIL</strong></td><td>1</td><td><code>{&quot;null_count&quot;: 1, &quot;sample_bad_rows&quot;: [{&quot;id&quot;: 2, &quot;name&quot;: &quot;Мария Сидорова&quot;, &quot;email&quot;: null, &quot;age&quot;: &quot;34&quot;, &quot;city&quot;: &quot;Санкт-Петербург&quot;}]}</code></td></tr><tr class='fail'><td>3</td><td>Возраст обязателен</td><td>not_null</td><td>age</td><td>critical</td><td><strong>FAIL</strong></td><td>1</td><td><code>{&quot;null_count&quot;: 1, &quot;sample_bad_rows&quot;: [{&quot;id&quot;: 8, &quot;name&quot;: &quot;Сергей Лебедев&quot;, &quot;email&quot;: &quot;sergey@list.ru&quot;, &quot;age&quot;: null, &quot;city&quot;: &quot;Воронеж&quot;}]}</code></td></tr><tr class='fail'><td>6</td><td>Age &gt; 30</td><td>min_max</td><td>age</td><td>warning</td><td><strong>FAIL</strong></td><td>4</td><td><code>{&quot;out_of_range&quot;: 4, &quot;min&quot;: 30, &quot;max&quot;: 120, &quot;sample_bad_rows&quot;: [{&quot;id&quot;: 1, &quot;name&quot;: &quot;Иван Петров&quot;, &quot;email&quot;: &quot;ivan@mail.ru&quot;, &quot;age&quot;: &quot;28&quot;, &quot;city&quot;: &quot;Москва&quot;}, {&quot;id&quot;: 5, &quot;name&quot;: &quot;Елена Волкова&quot;, &quot;email&quot;: &quot;elena@gmail.com&quot;, &quot;age&quot;: &quot;-5&quot;, &quot;city&quot;: &quot;Екатеринбург&quot;}, {&quot;id&quot;: 6, &quot;name&quot;: &quot;Пётр Новиков&quot;, &quot;email&quot;: &quot;petr@mail.ru&quot;, &quot;age&quot;: &quot;150&quot;, &quot;city&quot;: &quot;Омск&quot;}, {&quot;id&quot;: 7, &quot;name&quot;: &quot;Анна Морозова&quot;, &quot;email&quot;: &quot;anna@&quot;, &quot;age&quot;: &quot;29&quot;, &quot;city&quot;: &quot;Самара&quot;}]}</code></td></tr>
+    </tbody>
+  </table>
+</body>
+</html>

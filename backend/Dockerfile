@@ -1,8 +1,9 @@
 FROM python:3.11-slim
 
-# Устанавливаем Java 21 (актуально для Debian Trixie)
+# Java 21 для PySpark + DejaVu для PDF с кириллицей
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openjdk-21-jre-headless \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

@@ -85,8 +85,14 @@ export type RuleType =
   | 'not_zero'
   | 'regex_match'
   | 'accepted_values'
+  | 'freshness'
+  | 'null_percent'
+  | 'date_not_future'
   | 'row_count'
-  | 'schema_match';
+  | 'schema_match'
+  | 'custom_sql';
+
+export type ExportFormat = 'json' | 'csv' | 'html' | 'pdf';
 
 export interface RuleCreate {
   dataset_id: number;
@@ -223,8 +229,43 @@ export function parseDatasetPath(sourceConfig: string | null): string | null {
   }
 }
 
-export function buildDatasetSourceConfig(path: string): string {
-  return JSON.stringify({ path: path.trim() });
+export function parseDatasetFormat(sourceConfig: string | null): string | null {
+  if (!sourceConfig) return null;
+  try {
+    const parsed = JSON.parse(sourceConfig) as { format?: string };
+    return parsed.format ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function buildDatasetSourceConfig(
+  path: string,
+  format?: string | null
+): string {
+  const config: { path: string; format?: string } = { path: path.trim() };
+  if (format && format.trim()) {
+    config.format = format.trim().toLowerCase();
+  }
+  return JSON.stringify(config);
+}
+
+export async function exportRunReport(
+  runId: number,
+  format: ExportFormat
+): Promise<void> {
+  const res = await api.get(`/runs/${runId}/export`, {
+    params: { format },
+    responseType: 'blob',
+  });
+
+  const blob = res.data as Blob;
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `run_${runId}.${format}`;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 export default api;

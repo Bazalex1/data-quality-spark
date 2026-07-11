@@ -23,6 +23,7 @@ import {
   createDataset,
   deleteDataset,
   getDatasets,
+  parseDatasetFormat,
   parseDatasetPath,
   updateDataset,
   uploadDatasetFile,
@@ -31,8 +32,16 @@ import {
 } from '@/lib/api';
 
 const SOURCE_TYPE_OPTIONS = [
-  { value: 'path', label: 'Path (путь к файлу)' },
-  { value: 'csv', label: 'CSV' },
+  { value: 'csv', label: 'CSV / file' },
+  { value: 'path', label: 'Path' },
+  { value: 'spark_df', label: 'Spark DF (parquet/json/orc/csv)' },
+];
+
+const SPARK_FORMAT_OPTIONS = [
+  { value: 'parquet', label: 'parquet (default for spark_df)' },
+  { value: 'csv', label: 'csv' },
+  { value: 'json', label: 'json' },
+  { value: 'orc', label: 'orc' },
 ];
 
 type InputMode = 'path' | 'upload';
@@ -41,6 +50,7 @@ interface DatasetFormState {
   name: string;
   source_type: string;
   file_path: string;
+  data_format: string;
   input_mode: InputMode;
   file: File | null;
 }
@@ -49,15 +59,23 @@ const initialFormState: DatasetFormState = {
   name: '',
   source_type: 'csv',
   file_path: '/data/test.csv',
+  data_format: 'csv',
   input_mode: 'upload',
   file: null,
 };
 
+function defaultFormatForSourceType(sourceType: string): string {
+  if (sourceType === 'spark_df') return 'parquet';
+  return 'csv';
+}
+
 function datasetToForm(dataset: Dataset): DatasetFormState {
+  const parsedFormat = parseDatasetFormat(dataset.source_config_json);
   return {
     name: dataset.name,
     source_type: dataset.source_type,
     file_path: parseDatasetPath(dataset.source_config_json) ?? '',
+    data_format: parsedFormat || defaultFormatForSourceType(dataset.source_type),
     input_mode: 'path',
     file: null,
   };
@@ -136,7 +154,7 @@ export default function DatasetsPage() {
   };
 
   const resolveFilePath = async (): Promise<string | null> => {
-    if (form.input_mode === 'path') {
+    if (form.input_mode === 'path' || form.source_type === 'spark_df') {
       return form.file_path.trim() || null;
     }
 
@@ -164,17 +182,22 @@ export default function DatasetsPage() {
       const filePath = await resolveFilePath();
       if (!filePath) {
         setFormError(
-          form.input_mode === 'upload'
+          form.input_mode === 'upload' && form.source_type !== 'spark_df'
             ? 'Выберите CSV-файл для загрузки'
-            : 'Укажите путь к файлу'
+            : 'Укажите путь к файлу / директории Spark'
         );
         return;
       }
 
+      const format =
+        form.source_type === 'spark_df'
+          ? form.data_format || 'parquet'
+          : form.data_format || 'csv';
+
       const payload: DatasetCreate = {
         name: form.name.trim(),
         source_type: form.source_type,
-        source_config_json: buildDatasetSourceConfig(filePath),
+        source_config_json: buildDatasetSourceConfig(filePath, format),
       };
 
       if (editingDataset) {
@@ -301,39 +324,63 @@ export default function DatasetsPage() {
             <FormSelect
               value={form.source_type}
               onValueChange={(value) =>
-                setForm((prev) => ({ ...prev, source_type: value }))
+                setForm((prev) => ({
+                  ...prev,
+                  source_type: value,
+                  data_format: defaultFormatForSourceType(value),
+                  input_mode: value === 'spark_df' ? 'path' : prev.input_mode,
+                }))
               }
               options={SOURCE_TYPE_OPTIONS}
             />
+            <p className="text-xs text-foreground">
+              <code>spark_df</code> — данные, которые Spark-пайплайн записал на диск
+              (обычно parquet). Сервис читает их через PySpark.
+            </p>
           </div>
 
-          <div className="space-y-2">
-            <Label>Способ указания файла</Label>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant={form.input_mode === 'upload' ? 'default' : 'outline'}
-                onClick={() =>
-                  setForm((prev) => ({ ...prev, input_mode: 'upload' }))
+          {(form.source_type === 'spark_df' || form.input_mode === 'path') && (
+            <div className="space-y-1.5">
+              <Label>Формат данных</Label>
+              <FormSelect
+                value={form.data_format}
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, data_format: value }))
                 }
-              >
-                Загрузить файл
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={form.input_mode === 'path' ? 'default' : 'outline'}
-                onClick={() =>
-                  setForm((prev) => ({ ...prev, input_mode: 'path' }))
-                }
-              >
-                Указать путь
-              </Button>
+                options={SPARK_FORMAT_OPTIONS}
+              />
             </div>
-          </div>
+          )}
 
-          {form.input_mode === 'upload' ? (
+          {form.source_type !== 'spark_df' && (
+            <div className="space-y-2">
+              <Label>Способ указания файла</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={form.input_mode === 'upload' ? 'default' : 'outline'}
+                  onClick={() =>
+                    setForm((prev) => ({ ...prev, input_mode: 'upload' }))
+                  }
+                >
+                  Загрузить файл
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={form.input_mode === 'path' ? 'default' : 'outline'}
+                  onClick={() =>
+                    setForm((prev) => ({ ...prev, input_mode: 'path' }))
+                  }
+                >
+                  Указать путь
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {form.source_type !== 'spark_df' && form.input_mode === 'upload' ? (
             <div className="space-y-1.5">
               <Label htmlFor="dataset-file">CSV-файл</Label>
               <Input
@@ -361,18 +408,26 @@ export default function DatasetsPage() {
             </div>
           ) : (
             <div className="space-y-1.5">
-              <Label htmlFor="dataset-path">Путь к файлу</Label>
+              <Label htmlFor="dataset-path">
+                {form.source_type === 'spark_df'
+                  ? 'Путь к данным Spark (файл или директория)'
+                  : 'Путь к файлу'}
+              </Label>
               <Input
                 id="dataset-path"
                 value={form.file_path}
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, file_path: e.target.value }))
                 }
-                placeholder="/data/test.csv"
+                placeholder={
+                  form.source_type === 'spark_df'
+                    ? '/data/silver/orders_parquet'
+                    : '/data/test.csv'
+                }
               />
               <p className="text-xs text-foreground">
-                Для Docker: <code className="font-mono">/data/test.csv</code> или{' '}
-                <code className="font-mono">/data/uploads/...</code>
+                Для Docker: <code className="font-mono">/data/...</code> (volume
+                из docker-compose)
               </p>
             </div>
           )}

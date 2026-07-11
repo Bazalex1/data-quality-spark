@@ -10,8 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { executeRun, getRun, getRules } from '@/lib/api';
-import { exportRunAsCsv, exportRunAsJson } from '@/lib/export-run';
+import { executeRun, getRun, getRules, type ExportFormat } from '@/lib/api';
+import { exportRunViaApi } from '@/lib/export-run';
+import { getErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 
 function formatDate(date: string | null): string {
@@ -24,6 +25,8 @@ export default function RunDetailPage() {
   const runId = Number(params.id);
   const queryClient = useQueryClient();
   const [expandedResults, setExpandedResults] = useState<Set<number>>(new Set());
+  const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const {
     data: run,
@@ -54,6 +57,18 @@ export default function RunDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['runs'] });
     },
   });
+
+  const handleExport = async (format: ExportFormat) => {
+    setExportError(null);
+    setExportingFormat(format);
+    try {
+      await exportRunViaApi(runId, format);
+    } catch (err) {
+      setExportError(getErrorMessage(err));
+    } finally {
+      setExportingFormat(null);
+    }
+  };
 
   const toggleExpanded = (resultId: number) => {
     setExpandedResults((prev) => {
@@ -98,20 +113,22 @@ export default function RunDetailPage() {
           <StatusBadge status={run.status} />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => exportRunAsJson(run)}
-            disabled={!run.results.length}
-          >
-            Export JSON
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => exportRunAsCsv(run, rulesMap)}
-            disabled={!run.results.length}
-          >
-            Export CSV
-          </Button>
+          {(['json', 'csv', 'html', 'pdf'] as ExportFormat[]).map((format) => (
+            <Button
+              key={format}
+              variant="outline"
+              onClick={() => handleExport(format)}
+              disabled={
+                !run.results.length ||
+                exportingFormat !== null ||
+                executeMutation.isPending
+              }
+            >
+              {exportingFormat === format
+                ? `Export ${format.toUpperCase()}...`
+                : `Export ${format.toUpperCase()}`}
+            </Button>
+          ))}
           <Button
             onClick={() => executeMutation.mutate()}
             disabled={executeMutation.isPending || run.status === 'running'}
@@ -122,6 +139,10 @@ export default function RunDetailPage() {
           </Button>
         </div>
       </div>
+
+      {exportError && (
+        <p className="text-sm text-destructive">Ошибка экспорта: {exportError}</p>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <InfoCard label="Датасет" value={`#${run.dataset_id}`} />

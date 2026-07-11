@@ -11,8 +11,11 @@ import {
   RULE_TYPE_OPTIONS,
   ruleTypeNeedsAcceptedValues,
   ruleTypeNeedsColumn,
+  ruleTypeNeedsCustomSql,
   ruleTypeNeedsExpectedColumns,
+  ruleTypeNeedsFreshness,
   ruleTypeNeedsMinMax,
+  ruleTypeNeedsNullPercent,
   ruleTypeNeedsRegex,
   ruleTypeNeedsRowCount,
   ruleTypeNeedsValue,
@@ -330,6 +333,71 @@ export function RuleFormFields({
           {columnsLoading && (
             <p className="text-xs text-foreground">Загрузка колонок датасета...</p>
           )}
+        </div>
+      )}
+
+      {ruleTypeNeedsFreshness(form.rule_type) && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="rule-max-age-hours">Max age (hours)</Label>
+            <Input
+              id="rule-max-age-hours"
+              type="number"
+              value={form.max_age_hours}
+              onChange={(e) => onChange('max_age_hours', e.target.value)}
+              placeholder="24"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="rule-max-age-days">Max age (days)</Label>
+            <Input
+              id="rule-max-age-days"
+              type="number"
+              value={form.max_age_days}
+              onChange={(e) => onChange('max_age_days', e.target.value)}
+              placeholder="7"
+            />
+          </div>
+          <p className="col-span-2 text-xs text-foreground">
+            Свежесть: max(timestamp колонки) не старше указанного порога. Достаточно
+            одного из полей.
+          </p>
+        </div>
+      )}
+
+      {ruleTypeNeedsNullPercent(form.rule_type) && (
+        <div className="space-y-1.5">
+          <Label htmlFor="rule-max-null-percent">Max null percent (0–100)</Label>
+          <Input
+            id="rule-max-null-percent"
+            type="number"
+            min={0}
+            max={100}
+            value={form.max_null_percent}
+            onChange={(e) => onChange('max_null_percent', e.target.value)}
+            placeholder="5"
+          />
+          <p className="text-xs text-foreground">
+            Правило проходит, если доля NULL/пустых значений ≤ порога.
+          </p>
+        </div>
+      )}
+
+      {ruleTypeNeedsCustomSql(form.rule_type) && (
+        <div className="space-y-1.5">
+          <Label htmlFor="rule-custom-condition">
+            Spark SQL condition (true = плохая строка)
+          </Label>
+          <Input
+            id="rule-custom-condition"
+            value={form.custom_condition}
+            onChange={(e) => onChange('custom_condition', e.target.value)}
+            placeholder="end_date < start_date OR amount < 0"
+          />
+          <p className="text-xs text-foreground">
+            Пример бизнес-правил: <code>end_date &lt; start_date</code>,{' '}
+            <code>amount &lt; 0</code>, <code>status NOT IN (&apos;A&apos;,&apos;B&apos;)</code>
+          </p>
         </div>
       )}
 

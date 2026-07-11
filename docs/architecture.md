@@ -23,7 +23,6 @@
 
 
 ### 2. Правила качества
-Девять типов правил:
 
 | Тип | Что проверяет |
 |-----|----------------|
@@ -33,8 +32,12 @@
 | `not_equal` / `not_zero` | Значение не должно быть равно X |
 | `regex_match` | Строка подходит под регулярку |
 | `accepted_values` | Значение из списка допустимых |
+| `freshness` | max(timestamp) не старше N часов/дней |
+| `null_percent` | Доля NULL не выше порога |
+| `date_not_future` | Дата/время не в будущем |
 | `row_count` | Число строк в файле в пределах |
 | `schema_match` | Есть нужные колонки |
+| `custom_sql` | Spark SQL condition для «плохих» строк |
 
 
 ## Стек технологий
@@ -62,5 +65,6 @@
 | POST | `/runs/{id}/execute` | Старт Spark-проверки |
 | GET | `/runs/{id}/analysis` | Сохранённый AI-отчёт |
 | POST | `/runs/{id}/analyze` | Генерация AI-отчёта |
+| GET | `/runs/{id}/export?format=` | Экспорт json/csv/html/pdf |
 
 Документация Swagger: http://localhost:8000/docs

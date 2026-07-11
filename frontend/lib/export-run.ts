@@ -1,4 +1,10 @@
-import type { RunDetail, Rule } from '@/lib/api';
+import { exportRunReport, type ExportFormat, type RunDetail, type Rule } from '@/lib/api';
+
+/** Клиентский fallback JSON (если API недоступен). */
+export function exportRunAsJson(run: RunDetail) {
+  const payload = JSON.stringify(run, null, 2);
+  downloadBlob(payload, `run-${run.id}.json`, 'application/json');
+}
 
 function downloadBlob(content: BlobPart, filename: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType });
@@ -10,11 +16,6 @@ function downloadBlob(content: BlobPart, filename: string, mimeType: string) {
   URL.revokeObjectURL(url);
 }
 
-export function exportRunAsJson(run: RunDetail) {
-  const payload = JSON.stringify(run, null, 2);
-  downloadBlob(payload, `run-${run.id}.json`, 'application/json');
-}
-
 function escapeCsvValue(value: unknown): string {
   if (value === null || value === undefined) return '';
   const str = String(value);
@@ -24,6 +25,7 @@ function escapeCsvValue(value: unknown): string {
   return str;
 }
 
+/** Клиентский fallback CSV. */
 export function exportRunAsCsv(run: RunDetail, rulesMap: Map<number, Rule>) {
   const headers = [
     'run_id',
@@ -52,4 +54,9 @@ export function exportRunAsCsv(run: RunDetail, rulesMap: Map<number, Rule>) {
 
   const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
   downloadBlob(csv, `run-${run.id}.csv`, 'text/csv;charset=utf-8');
+}
+
+/** Основной экспорт через backend API (JSON/CSV/HTML/PDF). */
+export async function exportRunViaApi(runId: number, format: ExportFormat) {
+  await exportRunReport(runId, format);
 }
