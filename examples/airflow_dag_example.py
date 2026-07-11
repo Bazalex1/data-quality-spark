@@ -1,59 +1,3 @@
-"""
-Пример Airflow DAG для интеграции с сервисом качества данных (data-quality-spark).
-
-================================================================================
-КАК ИСПОЛЬЗОВАТЬ
-================================================================================
-
-1. Куда положить файл
-   Скопируйте этот файл в каталог DAG вашего Airflow, например:
-     $AIRFLOW_HOME/dags/data_quality_check_dag.py
-   или оставьте в репозитории:
-     examples/airflow_dag_example.py
-   и добавьте путь в airflow.cfg → [core] dags_folder.
-
-2. Переменные окружения (обязательные и опциональные)
-
-   DATASET_ID          — ID датасета в сервисе качества (обязательно).
-   DATA_QUALITY_API_URL — базовый URL API (по умолчанию http://localhost:8000/api/v1).
-
-   Опционально:
-   POLL_INTERVAL_SEC   — интервал опроса статуса run (по умолчанию 2).
-   POLL_TIMEOUT_SEC    — таймаут ожидания выполнения (по умолчанию 120).
-
-   Если POST/GET к localhost даёт HTTP 502 при работающем backend — на Windows
-   Python часто шлёт запросы через системный прокси (VPN/антивирус). Скрипт по
-   умолчанию обходит прокси; для системного прокси: DATA_QUALITY_USE_SYSTEM_PROXY=1.
-
-   В Airflow можно задать через Admin → Variables или через env в docker-compose:
-     AIRFLOW__CORE__ENVIRONMENT_VARIABLES__DATASET_ID=1
-
-3. Запуск Airflow локально (кратко)
-
-   pip install "apache-airflow==2.9.3" --constraint \
-     "https://raw.githubusercontent.com/apache/airflow/constraints-2.9.3/constraints-3.11.txt"
-
-   export AIRFLOW_HOME=~/airflow
-   airflow db init
-   airflow users create --username admin --password admin \
-     --firstname Admin --lastname User --role Admin --email admin@example.com
-
-   # В отдельном терминале — планировщик и веб-UI:
-   airflow scheduler
-   airflow webserver --port 8080
-
-   Убедитесь, что backend сервиса запущен (docker compose up -d backend).
-
-4. Демо без Airflow
-
-   Запустите как обычный Python-скрипт — выполнится тот же пайплайн последовательно:
-
-     set DATASET_ID=1
-     python examples/airflow_dag_example.py
-
-================================================================================
-"""
-
 from __future__ import annotations
 
 import json
@@ -87,10 +31,6 @@ class CriticalQualityFailure(Exception):
 
 
 def _build_http_opener() -> urllib.request.OpenerDirector:
-    """
-    На Windows urllib по умолчанию использует системный прокси (например 127.0.0.1:12334),
-    и запросы к localhost:8000 часто возвращают HTTP 502.
-    """
     use_system_proxy = os.environ.get("DATA_QUALITY_USE_SYSTEM_PROXY", "").lower() in (
         "1",
         "true",
@@ -135,7 +75,9 @@ def _request(
 
 
 def create_run(dataset_id: int, *, base_url: str = API_URL) -> dict[str, Any]:
-    return _request("POST", "/runs/", body={"dataset_id": dataset_id}, base_url=base_url)
+    return _request(
+        "POST", "/runs/", body={"dataset_id": dataset_id}, base_url=base_url
+    )
 
 
 def execute_run(run_id: int, *, base_url: str = API_URL) -> dict[str, Any]:
@@ -236,12 +178,18 @@ def check_quality_result(
                 task_ids="trigger_data_quality_check", key="run_detail"
             )
         if run_detail is None:
-            run_id = ti.xcom_pull(task_ids="trigger_data_quality_check", key="run_id") if ti else None
+            run_id = (
+                ti.xcom_pull(task_ids="trigger_data_quality_check", key="run_id")
+                if ti
+                else None
+            )
             if run_id is not None:
                 run_detail = get_run(int(run_id), base_url=base_url)
 
     if run_detail is None:
-        raise ValueError("Нет данных run_detail — сначала выполните trigger_data_quality_check")
+        raise ValueError(
+            "Нет данных run_detail — сначала выполните trigger_data_quality_check"
+        )
 
     results: list[dict[str, Any]] = run_detail.get("results") or []
     rules = get_rules(dataset_id, base_url=base_url)
@@ -265,9 +213,8 @@ def check_quality_result(
             warning_failures.append(line)
 
     if critical_failures:
-        message = (
-            "Критические нарушения качества данных:\n"
-            + "\n".join(f"  - {f}" for f in critical_failures)
+        message = "Критические нарушения качества данных:\n" + "\n".join(
+            f"  - {f}" for f in critical_failures
         )
         logger.error(message)
         raise CriticalQualityFailure(message)
