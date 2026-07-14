@@ -334,8 +334,6 @@ export default function DatasetsPage() {
               options={SOURCE_TYPE_OPTIONS}
             />
             <p className="text-xs text-foreground">
-              <code>spark_df</code> — данные, которые Spark-пайплайн записал на диск
-              (обычно parquet). Сервис читает их через PySpark.
             </p>
           </div>
 
