@@ -1,9 +1,10 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { RunStatus } from '@/lib/api';
+import type { RunStatus, RunSummary } from '@/lib/api';
+import { getRunOutcome, type RunOutcome } from '@/lib/dashboard-stats';
 
-const statusConfig: Record<
-  RunStatus,
+const outcomeConfig: Record<
+  RunOutcome,
   { label: string; className: string }
 > = {
   pending: {
@@ -18,18 +19,25 @@ const statusConfig: Record<
     label: 'Успешно',
     className: 'bg-green-100 text-green-700',
   },
+  with_errors: {
+    label: 'С ошибками',
+    className: 'bg-amber-100 text-amber-800',
+  },
   failed: {
-    label: 'Ошибка',
+    label: 'Неудачный',
     className: 'bg-destructive/10 text-destructive',
   },
 };
 
 interface StatusBadgeProps {
   status: RunStatus;
+  /** summary_json — нужен, чтобы отличить «успешно» от «с ошибками» */
+  summary?: RunSummary | null;
 }
 
-export default function StatusBadge({ status }: StatusBadgeProps) {
-  const config = statusConfig[status];
+export default function StatusBadge({ status, summary }: StatusBadgeProps) {
+  const outcome = getRunOutcome(status, summary);
+  const config = outcomeConfig[outcome];
 
   return (
     <Badge className={cn('h-6 px-2.5', config.className)}>

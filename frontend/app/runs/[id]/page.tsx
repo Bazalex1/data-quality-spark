@@ -110,7 +110,7 @@ export default function RunDetailPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold mb-2">Запуск #{run.id}</h1>
-          <StatusBadge status={run.status} />
+          <StatusBadge status={run.status} summary={run.summary_json} />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {(['json', 'csv', 'html', 'pdf'] as ExportFormat[]).map((format) => (

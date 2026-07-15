@@ -31,8 +31,8 @@ const STATUS_FILTERS: { value: RunStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Все' },
   { value: 'pending', label: 'Ожидание' },
   { value: 'running', label: 'Выполняется' },
-  { value: 'success', label: 'Успешно' },
-  { value: 'failed', label: 'Ошибка' },
+  { value: 'success', label: 'Завершённые' },
+  { value: 'failed', label: 'Неудачные' },
 ];
 
 export default function RunsPage() {
@@ -231,7 +231,7 @@ function RunRow({
       <TableCell className="font-mono">#{run.id}</TableCell>
       <TableCell>{run.dataset_id}</TableCell>
       <TableCell>
-        <StatusBadge status={run.status} />
+        <StatusBadge status={run.status} summary={run.summary_json} />
       </TableCell>
       <TableCell>
         {run.summary_json

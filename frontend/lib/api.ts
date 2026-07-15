@@ -16,6 +16,8 @@ export interface RunSummary {
   total_rules?: number;
   passed?: number;
   failed?: number;
+  /** Текст ошибки, если сам запуск упал (status=failed) */
+  error?: string;
 }
 
 export interface ResultDetails {

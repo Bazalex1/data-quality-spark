@@ -32,7 +32,9 @@ export function RunStatusChart({ data }: RunStatusChartProps) {
     <Card>
       <CardHeader>
         <CardTitle>Статусы запусков</CardTitle>
-        <CardDescription>Распределение запусков по статусам</CardDescription>
+        <CardDescription>
+          Успешные · с ошибками (нарушения правил) · неудачные (поломка запуска)
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (

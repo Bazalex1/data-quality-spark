@@ -1,8 +1,42 @@
-import type { Run, RunDetail, RunResult, Rule } from '@/lib/api';
+import type { Run, RunDetail, RunResult, RunSummary, Rule } from '@/lib/api';
+
+/** Исход выполнения проверки с учётом нарушений правил. */
+export type RunOutcome =
+  | 'pending'
+  | 'running'
+  | 'success'
+  | 'with_errors'
+  | 'failed';
+
+/**
+ * Классификация запуска:
+ * - success — завершился, нарушений правил нет
+ * - with_errors — завершился, есть нарушенные правила
+ * - failed — сам запуск поломался (crash / ошибка движка)
+ */
+export function getRunOutcome(
+  status: Run['status'],
+  summary: RunSummary | null | undefined
+): RunOutcome {
+  if (status === 'pending') return 'pending';
+  if (status === 'running') return 'running';
+  if (status === 'failed') return 'failed';
+  // status === 'success': движок отработал; смотрим на summary.failed
+  if ((summary?.failed ?? 0) > 0) return 'with_errors';
+  return 'success';
+}
+
+export function getRunOutcomeFromRun(run: Pick<Run, 'status' | 'summary_json'>): RunOutcome {
+  return getRunOutcome(run.status, run.summary_json);
+}
 
 export interface DashboardStatistics {
   totalRuns: number;
+  /** Завершились без нарушенных правил */
   successfulRuns: number;
+  /** Завершились, но есть нарушенные правила */
+  runsWithErrors: number;
+  /** Сам запуск поломался (status=failed) */
   failedRuns: number;
   runningRuns: number;
   pendingRuns: number;
@@ -45,6 +79,7 @@ function emptyStatistics(): DashboardStatistics {
   return {
     totalRuns: 0,
     successfulRuns: 0,
+    runsWithErrors: 0,
     failedRuns: 0,
     runningRuns: 0,
     pendingRuns: 0,
@@ -75,10 +110,31 @@ export function buildDashboardData(
     };
   }
 
-  const successfulRuns = history.filter((r) => r.status === 'success').length;
-  const failedRuns = history.filter((r) => r.status === 'failed').length;
-  const runningRuns = history.filter((r) => r.status === 'running').length;
-  const pendingRuns = history.filter((r) => r.status === 'pending').length;
+  let successfulRuns = 0;
+  let runsWithErrors = 0;
+  let failedRuns = 0;
+  let runningRuns = 0;
+  let pendingRuns = 0;
+
+  for (const run of history) {
+    switch (getRunOutcomeFromRun(run)) {
+      case 'success':
+        successfulRuns += 1;
+        break;
+      case 'with_errors':
+        runsWithErrors += 1;
+        break;
+      case 'failed':
+        failedRuns += 1;
+        break;
+      case 'running':
+        runningRuns += 1;
+        break;
+      case 'pending':
+        pendingRuns += 1;
+        break;
+    }
+  }
 
   const totalRulesChecked = history.reduce(
     (sum, run) => sum + (run.summary_json?.total_rules ?? 0),
@@ -93,15 +149,19 @@ export function buildDashboardData(
     0
   );
 
+  // Успешность — доля запусков без нарушений среди завершённых
+  const completedRuns = successfulRuns + runsWithErrors + failedRuns;
+
   const statistics: DashboardStatistics = {
     totalRuns: history.length,
     successfulRuns,
+    runsWithErrors,
     failedRuns,
     runningRuns,
     pendingRuns,
     successRate:
-      history.length > 0
-        ? Math.round((successfulRuns / history.length) * 100)
+      completedRuns > 0
+        ? Math.round((successfulRuns / completedRuns) * 100)
         : 0,
     totalRulesChecked,
     totalRulesPassed,
@@ -138,12 +198,18 @@ function buildErrors(
   const rulesMap = new Map(rules.map((r) => [r.id, r]));
 
   for (const run of runs) {
-    if (run.status === 'failed') {
+    if (getRunOutcomeFromRun(run) === 'failed') {
+      const errorText =
+        typeof run.summary_json?.error === 'string'
+          ? run.summary_json.error
+          : null;
       errors.push({
         id: `run-${run.id}`,
         type: 'run',
-        title: `Запуск #${run.id} завершился с ошибкой`,
-        description: `Датасет #${run.dataset_id}`,
+        title: `Запуск #${run.id} завершился неудачно`,
+        description: errorText
+          ? `Датасет #${run.dataset_id} · ${errorText}`
+          : `Датасет #${run.dataset_id} · поломка выполнения`,
         runId: run.id,
         createdAt: run.finished_at ?? run.started_at,
       });
@@ -242,8 +308,9 @@ export function buildRunStatusChartData(
   statistics: DashboardStatistics
 ): ChartSlice[] {
   return [
-    { name: 'Успешно', value: statistics.successfulRuns, fill: '#16a34a' },
-    { name: 'С ошибками', value: statistics.failedRuns, fill: '#dc2626' },
+    { name: 'Успешные', value: statistics.successfulRuns, fill: '#16a34a' },
+    { name: 'С ошибками', value: statistics.runsWithErrors, fill: '#d97706' },
+    { name: 'Неудачные', value: statistics.failedRuns, fill: '#dc2626' },
     { name: 'Выполняется', value: statistics.runningRuns, fill: '#2563eb' },
     { name: 'Ожидание', value: statistics.pendingRuns, fill: '#6b7280' },
   ].filter((item) => item.value > 0);

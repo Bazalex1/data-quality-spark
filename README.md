@@ -23,7 +23,7 @@ cd frontend && npm install && npm run dev
 ### Ollama (AI-анализ)
 
 ```bash
-ollama pull qwen3:8b   # или llama3.2:3b — быстрее
+ollama pull qwen3:8b 
 ```
 
 Ollama должна быть запущена на хосте. Backend в Docker обращается к ней через `host.docker.internal:11434`.
@@ -56,9 +56,6 @@ data-quality-spark/
 ## Примеры интеграции
 
 ```bash
-# Простой HTTP-клиент
-python examples/pipeline_integration.py
-
 # Airflow DAG (или как скрипт)
 set DATASET_ID=1
 python examples/airflow_dag_example.py

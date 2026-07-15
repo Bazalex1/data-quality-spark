@@ -125,22 +125,31 @@ export default function DashboardPage() {
           title="Статистика"
           description="Сводные показатели по всем запускам проверок"
         />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
           <KpiCard label="Всего запусков" value={stats.totalRuns} />
           <KpiCard
             label="Успешных"
             value={stats.successfulRuns}
             valueClassName="text-green-600"
+            hint="Без нарушенных правил"
           />
           <KpiCard
             label="С ошибками"
+            value={stats.runsWithErrors}
+            valueClassName="text-amber-600"
+            hint="Есть нарушенные правила"
+          />
+          <KpiCard
+            label="Неудачных"
             value={stats.failedRuns}
             valueClassName="text-destructive"
+            hint="Сам запуск поломался"
           />
           <KpiCard
             label="Успешность"
             value={`${stats.successRate}%`}
             valueClassName="text-foreground"
+            hint="Доля успешных среди завершённых"
           />
           <KpiCard
             label="Правил пройдено"
@@ -306,7 +315,10 @@ export default function DashboardPage() {
                     <TableCell className="font-mono">#{run.id}</TableCell>
                     <TableCell>#{run.dataset_id}</TableCell>
                     <TableCell>
-                      <StatusBadge status={run.status} />
+                      <StatusBadge
+                        status={run.status}
+                        summary={run.summary_json}
+                      />
                     </TableCell>
                     <TableCell>
                       {run.summary_json
@@ -360,16 +372,21 @@ function KpiCard({
   label,
   value,
   valueClassName = 'text-foreground',
+  hint,
 }: {
   label: string;
   value: number | string;
   valueClassName?: string;
+  hint?: string;
 }) {
   return (
     <Card>
       <CardContent className="pt-0">
         <p className="text-sm text-foreground mb-2">{label}</p>
         <p className={cn('text-3xl font-semibold', valueClassName)}>{value}</p>
+        {hint ? (
+          <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+        ) : null}
       </CardContent>
     </Card>
   );
