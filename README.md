@@ -23,7 +23,7 @@ cd frontend && npm install && npm run dev
 | PostgreSQL | localhost:**5433** |
 
 ### Ollama (AI-анализ)
-
+(Необязательно, для работы сервиса)
 ```bash
 ollama pull qwen3:8b 
 ```
