@@ -2,6 +2,8 @@
 
 Сервис проверки качества данных на **Spark** с веб-интерфейсом, REST API и AI-анализом результатов.
 
+Описание архитектуры лежит в docs/architecture.md
+
 ---
 
 ## Быстрый старт
@@ -45,15 +47,15 @@ data-quality-spark/
 ---
 
 ## Основной сценарий
-
-1. Создать **датасет** (путь к CSV или upload)
+(Иллюстрирующие скриншоты лежат в папке docs/)
+1. Создать **датасет** (путь к CSV или upload) 
 2. Настроить **правила** (`not_null`, `unique`, `min_max`, …)
 3. Создать и **запустить run** — Spark проверяет файл
 4. Смотреть результаты, экспорт, **AI-анализ** на странице run
 
 ---
 
-## Примеры интеграции
+## Примеры интеграции с Airflow
 
 ```bash
 # Airflow DAG (или как скрипт)
@@ -72,16 +74,6 @@ cd backend && pip install -r requirements.txt && uvicorn app.main:app --reload
 # Миграции
 cd backend && alembic upgrade head
 
-# Тесты
-make test
 ```
 
 ---
-
-## Стек
-
-- **Frontend:** Next.js, React, TypeScript, TanStack Query, Tailwind, Recharts
-- **Backend:** FastAPI, SQLAlchemy, PySpark, Alembic
-- **БД:** PostgreSQL
-- **AI:** Ollama (локальные LLM)
-- **Инфра:** Docker Compose
