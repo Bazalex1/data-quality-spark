@@ -35,7 +35,7 @@ make down
 ```
 
 ### Ollama (AI-анализ, опционально)
-
+(Необязательно, для работы сервиса)
 ```bash
 ollama pull qwen3:8b
 ```
@@ -89,3 +89,5 @@ cd frontend && npm install && npm run dev
 # Миграции
 cd backend && alembic upgrade head
 ```
+
+---
