@@ -8,12 +8,16 @@
 
 ## Быстрый старт
 
-```bash
-# Backend + PostgreSQL
-docker compose up -d
+Нужен только **Docker** (Docker Compose). Node.js и Python на хосте не обязательны.
 
-# Frontend
-cd frontend && npm install && npm run dev
+```bash
+docker compose up --build
+```
+
+Или через Makefile:
+
+```bash
+make up
 ```
 
 | Сервис | URL |
@@ -22,10 +26,18 @@ cd frontend && npm install && npm run dev
 | Backend API / Swagger | http://localhost:8000/docs |
 | PostgreSQL | localhost:**5433** |
 
-### Ollama (AI-анализ)
+Остановка:
 
 ```bash
-ollama pull qwen3:8b 
+docker compose down
+# или
+make down
+```
+
+### Ollama (AI-анализ, опционально)
+
+```bash
+ollama pull qwen3:8b
 ```
 
 Ollama должна быть запущена на хосте. Backend в Docker обращается к ней через `host.docker.internal:11434`.
@@ -36,19 +48,19 @@ Ollama должна быть запущена на хосте. Backend в Docker
 
 ```
 data-quality-spark/
-├── backend/          # FastAPI, Spark execution_engine, LLM-анализатор
-├── frontend/         # Next.js UI (дашборд, датасеты, правила, запуски)
-├── examples/         # Airflow DAG, pipeline_integration.py
-├── data/             # CSV-файлы (volume для Docker)
-├── docs/             # Техническая архитектура
-└── docker-compose.yml
+├── backend/           # FastAPI, Spark execution_engine, LLM-анализатор
+├── frontend/          # Next.js UI (дашборд, датасеты, правила, запуски)
+├── examples/          # Airflow DAG, pipeline_integration.py
+├── data/              # CSV-файлы (volume для Docker)
+├── docs/              # Техническая архитектура
+└── docker-compose.yml # postgres + backend + frontend
 ```
 
 ---
 
 ## Основной сценарий
 (Иллюстрирующие скриншоты лежат в папке docs/)
-1. Создать **датасет** (путь к CSV или upload) 
+1. Создать **датасет** (путь к CSV или upload)
 2. Настроить **правила** (`not_null`, `unique`, `min_max`, …)
 3. Создать и **запустить run** — Spark проверяет файл
 4. Смотреть результаты, экспорт, **AI-анализ** на странице run
@@ -65,15 +77,15 @@ python examples/airflow_dag_example.py
 
 ---
 
-## Разработка
+## Разработка (без Docker)
 
 ```bash
-# Backend локально
+# Backend локально (нужен Python + Postgres)
 cd backend && pip install -r requirements.txt && uvicorn app.main:app --reload
+
+# Frontend локально (нужен Node.js)
+cd frontend && npm install && npm run dev
 
 # Миграции
 cd backend && alembic upgrade head
-
 ```
-
----

@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Self-contained Node server for Docker (smaller runtime image)
+  output: "standalone",
 };
 
 export default nextConfig;
